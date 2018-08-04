@@ -1,0 +1,6 @@
+[package]
+name = "rustgnuciverba"
+version = "0.1.0"
+authors = ["mone27 <mone.massaro@gmail.com>"]
+
+[dependencies]

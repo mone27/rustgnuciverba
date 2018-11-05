@@ -1,5 +1,8 @@
+
+#[macro_use]
 extern crate ndarray;
 use ndarray::Array2;
+
 use std::collections::HashMap;
 use std::fmt;
 extern crate rand;
@@ -27,7 +30,7 @@ impl std::ops::Not for Direction{
 #[derive(Copy, Clone, Debug)]
 struct WordPos{
     row: usize,
-    column: usize,
+    col: usize,
     dir: Direction
 }
 impl Crossword {
@@ -37,54 +40,82 @@ impl Crossword {
         }
     }
     fn put_word(&mut self, word_position: &WordPos, word: impl AsRef<str>) -> (){
+        //may be more efficient
         let word = word.as_ref();
-        for (c, pos) in word.chars().zip(0..word.len()) {
-            self.crossword[match word_position.dir{
-                Direction::Horizontal => word_position.row * self.n_columns + word_position.column + pos -1, //just a quick awful no sense quick fix
-                Direction::Vertical =>
-            }] = c;
+        for (old, mut new) in self.crossword.slice_mut(
+            s![word_position.row, word_position.col..(word_position.col + word.len())]).iter_mut().zip(word.chars()){
+            *old = new;
         }
+//        match word_position{
+//            Direction::Horizontal => self.crossword.slice_mut(
+//                s![word_position.row, word_position.col..(word_position.col + word.len())]),
+//            Direction::Vertical => unimplemented!()
+//        }
+
+//        for (c, pos) in word.chars().zip(0..word.len()) {
+//            self.crossword[match word_position.dir{
+//                Direction::Horizontal => self.crossword[word_position.row, word_position.col + pos],
+//                Direction::Vertical => self.crossword[word_position.row + pos, word_position.col]]
+//            }] = c;
+//        }
 
     }
+    //this s**t does not work...updating it later
+//    fn get_print_string(&self) -> String{
+//        let mut return_vec: Vec<char>;
+//        for row in self.crossword.outer_iter(){
+//            //let mut row: Vec<char> = row.into().collect();
+//            return_vec.append(&mut row);
+//        }
+//        return_vec.collect()
+//    }
 
-    fn get_word(&self, word_position: &WordPos, len: usize) -> String{
-        // TODO merge get_word and get_max_length for performance reasons?
-        match word_position.dir {
-            Direction::Horizontal => {
-                let start_pos = word_position.row * self.n_columns + word_position.column;
-                self.crossword[start_pos..(start_pos + len)].iter().collect()
-            }
-            Direction::Vertical => {
-                let mut final_word = String::new();
-                let start_pos = word_position.row * self.n_columns + word_position.column;
-                for c in (start_pos..(start_pos + self.n_columns*len)).step_by(self.n_columns){
-                    final_word.push(self.crossword[c])
-                };
-                final_word
-            }
-        }
-    }
-    fn get_max_word_length(&self, word_position: &WordPos) -> usize { //not sure good way to handle 0 len case
-        match word_position.dir {
-            Direction::Horizontal => {
-                let start_pos = word_position.row * self.n_columns + word_position.column;
-                self.crossword.iter()
-                    .skip(start_pos)
-                    .position(|&c|c == '#')
-                    .unwrap_or((word_position.row+1)*self.n_columns) - start_pos
-            } ,
-            Direction::Vertical => {
-                let start_pos = word_position.row * self.n_columns + word_position.column;
-                self.crossword.iter()
-                    .skip(start_pos)
-                    .step_by(self.n_columns)
-                    .position(|&c|c == '#')
-                    .unwrap_or(self.n_rows - word_position.row)
-            }
-        }
-    }
+//    fn get_word(&self, word_position: &WordPos, len: usize) -> String{
+//        // TODO merge get_word and get_max_length for performance reasons?
+//        match word_position.dir {
+//            Direction::Horizontal => {
+//                let start_pos = word_position.row * self.n_columns + word_position.column;
+//                self.crossword[start_pos..(start_pos + len)].iter().collect()
+//            }
+//            Direction::Vertical => {
+//                let mut final_word = String::new();
+//                let start_pos = word_position.row * self.n_columns + word_position.column;
+//                for c in (start_pos..(start_pos + self.n_columns*len)).step_by(self.n_columns){
+//                    final_word.push(self.crossword[c])
+//                };
+//                final_word
+//            }
+//        }
+//    }
+//    fn get_max_word_length(&self, word_position: &WordPos) -> usize { //not sure good way to handle 0 len case
+//        match word_position.dir {
+//            Direction::Horizontal => {
+//                let start_pos = word_position.row * self.n_columns + word_position.column;
+//                self.crossword.iter()
+//                    .skip(start_pos)
+//                    .position(|&c|c == '#')
+//                    .unwrap_or((word_position.row+1)*self.n_columns) - start_pos
+//            } ,
+//            Direction::Vertical => {
+//                let start_pos = word_position.row * self.n_columns + word_position.column;
+//                self.crossword.iter()
+//                    .skip(start_pos)
+//                    .step_by(self.n_columns)
+//                    .position(|&c|c == '#')
+//                    .unwrap_or(self.n_rows - word_position.row)
+//            }
+//        }
+//    }
 
 }
+//impl fmt::Display for Crossword{
+//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result{
+//        write!(f, "{}", self.get_print_string());
+//        Ok(())
+//    }
+//}
+
+
 
 pub struct Dict {
     dict: HashMap<usize, Vec<String>>,
@@ -185,11 +216,19 @@ mod test {
     where
         T: FnOnce(Crossword) -> (),
     {
-        let cross = Crossword::new(10, 10);
+        let mut cross = Crossword::new(10, 10);
         test(cross);
     }
     #[test]
     fn test_crossword_creation() {
+
         run_test_cross(|cross| println!("{:?}", cross))
+    }
+    #[test]
+    fn test_put_word(){
+        run_test_cross(|mut cross|{
+            cross.put_word(&WordPos{row: 0,col: 0, dir: Direction::Horizontal }, "ciao");
+            println!("{:?}", cross);
+        })
     }
 }

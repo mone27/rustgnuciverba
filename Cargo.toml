@@ -2,7 +2,7 @@
 name = "rustgnuciverba"
 version = "0.1.0"
 authors = ["mone27 <mone.massaro@gmail.com>"]
-
+edition = "2018"
 [lib]
 name = "rustgnuciverba"
 path = "src/lib.rs"

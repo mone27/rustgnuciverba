@@ -1,4 +1,4 @@
-// use ndarray::s; 
+// use ndarray::s;
 #[macro_use]
 extern crate ndarray;
 use ndarray::Array2;
@@ -6,7 +6,7 @@ use ndarray::Array2;
 use std::collections::HashMap;
 use std::fmt;
 extern crate rand;
-use rand::Rng;
+use rand::seq::SliceRandom;
 
 #[derive(Debug)]
 pub struct Crossword {
@@ -39,7 +39,7 @@ impl Crossword {
             crossword: Array2::from_elem((numer_row, number_col), '_'),
         }
     }
-// insert a word in the crossword at the given wordpos
+    // insert a word in the crossword at the given wordpos
     fn put_word(&mut self, word_position: &WordPos, word: impl AsRef<str>) -> () {
         //may be more efficient
         let word = word.as_ref();
@@ -80,13 +80,13 @@ impl Crossword {
     //     fn get_max_word_length(&self, word_position: &WordPos) -> usize { //not sure good way to handle 0 len case
     //         match word_position.dir {
     //             Direction::Horizontal => {
-                    
+
     //             //     self.crossword.slice(
-                        
+
     //             //         // .position(|&c|c == '#')
 
     //             0
-                        
+
     //             } ,
     //             Direction::Vertical => {
     //                 let start_pos = word_position.row * self.n_columns + word_position.column;
@@ -99,10 +99,18 @@ impl Crossword {
     //        }
     //    }
 }
-impl fmt::Display for Crossword{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result{
-        // removes the square brakets from the default crossword string 
-        write!(f, " {}", self.crossword.to_string().chars().filter(|&c| c!=']' && c!='[').collect::<String>());
+impl fmt::Display for Crossword {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // removes the square brakets from the default crossword string
+        write!(
+            f,
+            " {}",
+            self.crossword
+                .to_string()
+                .chars()
+                .filter(|&c| c != ']' && c != '[')
+                .collect::<String>()
+        );
         Ok(())
     }
 }
@@ -111,7 +119,7 @@ pub struct Dict {
     dict: HashMap<usize, Vec<String>>,
 }
 
-impl Dict { 
+impl Dict {
     pub fn new(list_word: &str) -> Self {
         Dict {
             dict: {
@@ -127,7 +135,10 @@ impl Dict {
     }
     pub fn find_random_word(&self, query_word: &str) -> Option<&str> {
         match self.find_words(query_word) {
-            Some(words) => Some(rand::thread_rng().choose(&words).unwrap()),
+            Some(words) => {
+                let mut rng = rand::thread_rng();
+                words.choose(&mut rng).copied()
+            }
             None => None,
         }
     }
